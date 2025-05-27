@@ -176,10 +176,9 @@ namespace demo
 
         if (!args[0]->IsArray())
         {
-            result = String::Concat(
-                String::NewFromUtf8(isolate, "Wrong argument 'polyshape': array[shapes][points][point] required: ").ToLocalChecked(),
-                args[0]->ToString(context).ToLocalChecked());
-            return result;
+            result = String::Concat(isolate,
+                                    String::NewFromUtf8(isolate, "Wrong argument 'polyshape': array[shapes][points][point] required: ").ToLocalChecked(),
+                                    args[0]->ToString(context).ToLocalChecked());
         }
 
         if (checkLength < 2)
@@ -191,9 +190,9 @@ namespace demo
             !(args[1]->Equals(context, String::NewFromUtf8(isolate, "double").ToLocalChecked()).FromMaybe(false) ||
               args[1]->Equals(context, String::NewFromUtf8(isolate, "integer").ToLocalChecked()).FromMaybe(false)))
         {
-            result = String::Concat(
-                String::NewFromUtf8(isolate, "Wrong argument 'pointType': 'double' || 'integer' required: ").ToLocalChecked(),
-                args[1]->ToString(context).ToLocalChecked());
+            result = String::Concat(isolate,
+                                    String::NewFromUtf8(isolate, "Wrong argument 'pointType': 'double' || 'integer' required: ").ToLocalChecked(),
+                                    args[1]->ToString(context).ToLocalChecked());
             return result;
         }
 
@@ -201,9 +200,9 @@ namespace demo
         {
             if (!args[2]->IsNumber())
             {
-                result = String::Concat(
-                    String::NewFromUtf8(isolate, "Wrong argument 'delta' || 'distance': number required: ").ToLocalChecked(),
-                    args[2]->ToString(context).ToLocalChecked());
+                result = String::Concat(isolate,
+                                        String::NewFromUtf8(isolate, "Wrong argument 'delta' || 'distance': number required: ").ToLocalChecked(),
+                                        args[2]->ToString(context).ToLocalChecked());
                 return result;
             }
         }
@@ -215,9 +214,9 @@ namespace demo
                   args[3]->Equals(context, String::NewFromUtf8(isolate, "jtSquare").ToLocalChecked()).FromMaybe(false) ||
                   args[3]->Equals(context, String::NewFromUtf8(isolate, "jtRound").ToLocalChecked()).FromMaybe(false)))
             {
-                result = String::Concat(
-                    String::NewFromUtf8(isolate, "Wrong argument 'joinType': 'jtMiter' || 'jtSquare' || 'jtRound' required: ").ToLocalChecked(),
-                    args[3]->ToString(context).ToLocalChecked());
+                result = String::Concat(isolate,
+                                        String::NewFromUtf8(isolate, "Wrong argument 'joinType': 'jtMiter' || 'jtSquare' || 'jtRound' required: ").ToLocalChecked(),
+                                        args[3]->ToString(context).ToLocalChecked());
                 return result;
             }
         }
@@ -226,9 +225,9 @@ namespace demo
         {
             if (!args[4]->IsNumber())
             {
-                result = String::Concat(
-                    String::NewFromUtf8(isolate, "Wrong argument 'miterLimit': number required: ").ToLocalChecked(),
-                    args[4]->ToString(context).ToLocalChecked());
+                result = String::Concat(isolate,
+                                        String::NewFromUtf8(isolate, "Wrong argument 'miterLimit': number required: ").ToLocalChecked(),
+                                        args[4]->ToString(context).ToLocalChecked());
                 return result;
             }
         }
