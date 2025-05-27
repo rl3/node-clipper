@@ -29,15 +29,13 @@ namespace demo
     {
         if (args.Length() > 0 && args[0]->IsNumber())
         {
-            debug = args[0]->NumberValue(args.GetIsolate()->GetCurrentContext()).FromMaybe(0);
+            debug = args[0]->NumberValue();
         }
         args.GetReturnValue().Set(debug);
     }
 
     Paths v8ArrayToPolygons(Local<Array> inOutPolygons, bool doubleType)
     {
-        Isolate *isolate = Isolate::GetCurrent();
-        v8::Local<v8::Context> context = isolate->GetCurrentContext();
         int len = inOutPolygons->Length();
         Paths polyshape(len);
 #ifdef DEBUG
@@ -49,7 +47,7 @@ namespace demo
 
         for (int i = 0; i < len; i++)
         {
-            Local<Array> polyLine = Local<Array>::Cast(inOutPolygons->Get(context, i).ToLocalChecked());
+            Local<Array> polyLine = Local<Array>::Cast(inOutPolygons->Get(i));
 #ifdef DEBUG
             if (debug > 2)
                 std::cout << "polyLine: length: " << polyLine->Length() << std::endl;
@@ -58,23 +56,23 @@ namespace demo
                 continue;
             for (unsigned int j = 0; j < polyLine->Length(); j++)
             {
-                Local<Array> point = Local<Array>::Cast(polyLine->Get(context, j).ToLocalChecked());
+                Local<Array> point = Local<Array>::Cast(polyLine->Get(j));
                 if (point->Length() < 2)
                     continue;
-                Local<Value> x = point->Get(context, 0).ToLocalChecked();
-                Local<Value> y = point->Get(context, 1).ToLocalChecked();
+                Local<Value> x = point->Get(0);
+                Local<Value> y = point->Get(1);
                 IntPoint p;
                 if (doubleType)
                 {
                     p = IntPoint(
-                        x->NumberValue(context).FromMaybe(0) * doubleFactor,
-                        y->NumberValue(context).FromMaybe(0) * doubleFactor);
+                        x->NumberValue() * doubleFactor,
+                        y->NumberValue() * doubleFactor);
                 }
                 else
                 {
                     p = IntPoint(
-                        x->NumberValue(context).FromMaybe(0),
-                        y->NumberValue(context).FromMaybe(0));
+                        x->NumberValue(),
+                        y->NumberValue());
                 }
                 polyshape[i].push_back(p);
 #ifdef DEBUG
@@ -97,7 +95,6 @@ namespace demo
 
     Local<Array> polygonsToV8Array(Isolate *isolate, Paths polygons, bool doubleType)
     {
-        v8::Local<v8::Context> context = isolate->GetCurrentContext();
         Local<Array> result = Array::New(isolate);
         for (unsigned int i = 0; i < polygons.size(); i++)
         {
@@ -118,11 +115,11 @@ namespace demo
                     y = Number::New(isolate, ip.Y);
                 }
                 Local<Array> point = Array::New(isolate);
-                point->Set(context, point->Length(), x).FromJust();
-                point->Set(context, point->Length(), y).FromJust();
-                points->Set(context, points->Length(), point).FromJust();
+                point->Set(point->Length(), x);
+                point->Set(point->Length(), y);
+                points->Set(points->Length(), point);
             }
-            result->Set(context, result->Length(), points).FromJust();
+            result->Set(result->Length(), points);
         }
         return result;
     }
@@ -153,23 +150,22 @@ namespace demo
     Local<String> checkArguments(const FunctionCallbackInfo<Value> &args, int checkLength)
     {
         Isolate *isolate = args.GetIsolate();
-        v8::Local<v8::Context> context = isolate->GetCurrentContext();
         Local<String> result = String::Empty(isolate);
         if (args.Length() < 2)
         {
-            result = String::NewFromUtf8(isolate, "Too few arguments! At least 'polyshape[][][]' and 'pointType' are required!", v8::NewStringType::kNormal).ToLocalChecked();
+            result = String::NewFromUtf8(isolate, "Too few arguments! At least 'polyshape[][][]' and 'pointType' are required!");
             return result;
         }
         if (args.Length() < checkLength)
         {
-            result = String::NewFromUtf8(isolate, "Too few arguments!", v8::NewStringType::kNormal).ToLocalChecked();
+            result = String::NewFromUtf8(isolate, "Too few arguments!");
             return result;
         }
         if (!args[0]->IsArray())
         {
             result = String::Concat(
-                String::NewFromUtf8(isolate, "Wrong argument 'polyshape': array[shapes][points][point] required: ", v8::NewStringType::kNormal).ToLocalChecked(),
-                args[0]->ToString(context).ToLocalChecked());
+                String::NewFromUtf8(isolate, "Wrong argument 'polyshape': array[shapes][points][point] required: "),
+                args[0]->ToString());
             return result;
         }
         if (checkLength < 2)
@@ -177,12 +173,12 @@ namespace demo
             return result;
         }
         if (!args[1]->IsString() ||
-            !(args[1]->StrictEquals(String::NewFromUtf8(isolate, "double", v8::NewStringType::kNormal).ToLocalChecked()) ||
-              args[1]->StrictEquals(String::NewFromUtf8(isolate, "integer", v8::NewStringType::kNormal).ToLocalChecked())))
+            !(args[1]->Equals(String::NewFromUtf8(isolate, "double")) ||
+              args[1]->Equals(String::NewFromUtf8(isolate, "integer"))))
         {
             result = String::Concat(
-                String::NewFromUtf8(isolate, "Wrong argument 'pointType': 'double' || 'integer' required: ", v8::NewStringType::kNormal).ToLocalChecked(),
-                args[1]->ToString(context).ToLocalChecked());
+                String::NewFromUtf8(isolate, "Wrong argument 'pointType': 'double' || 'integer' required: "),
+                args[1]->ToString());
             return result;
         }
         if ((args.Length() > 2) && (checkLength > 2))
@@ -190,21 +186,21 @@ namespace demo
             if (!args[2]->IsNumber())
             {
                 result = String::Concat(
-                    String::NewFromUtf8(isolate, "Wrong argument 'delta' || 'distance': number required: ", v8::NewStringType::kNormal).ToLocalChecked(),
-                    args[2]->ToString(context).ToLocalChecked());
+                    String::NewFromUtf8(isolate, "Wrong argument 'delta' || 'distance': number required: "),
+                    args[2]->ToString());
                 return result;
             }
         }
         if ((args.Length() > 3) && (checkLength > 3))
         {
             if (!args[3]->IsString() ||
-                !(args[3]->StrictEquals(String::NewFromUtf8(isolate, "jtMiter", v8::NewStringType::kNormal).ToLocalChecked()) ||
-                  args[3]->StrictEquals(String::NewFromUtf8(isolate, "jtSquare", v8::NewStringType::kNormal).ToLocalChecked()) ||
-                  args[3]->StrictEquals(String::NewFromUtf8(isolate, "jtRound", v8::NewStringType::kNormal).ToLocalChecked())))
+                !(args[3]->Equals(String::NewFromUtf8(isolate, "jtMiter")) ||
+                  args[3]->Equals(String::NewFromUtf8(isolate, "jtSquare")) ||
+                  args[3]->Equals(String::NewFromUtf8(isolate, "jtRound"))))
             {
                 result = String::Concat(
-                    String::NewFromUtf8(isolate, "Wrong argument 'joinType': 'jtMiter' || 'jtSquare' || 'jtRound' required: ", v8::NewStringType::kNormal).ToLocalChecked(),
-                    args[3]->ToString(context).ToLocalChecked());
+                    String::NewFromUtf8(isolate, "Wrong argument 'joinType': 'jtMiter' || 'jtSquare' || 'jtRound' required: "),
+                    args[3]->ToString());
                 return result;
             }
         }
@@ -213,123 +209,17 @@ namespace demo
             if (!args[4]->IsNumber())
             {
                 result = String::Concat(
-                    String::NewFromUtf8(isolate, "Wrong argument 'miterLimit': number required: ", v8::NewStringType::kNormal).ToLocalChecked(),
-                    args[4]->ToString(context).ToLocalChecked());
+                    String::NewFromUtf8(isolate, "Wrong argument 'miterLimit': number required: "),
+                    args[4]->ToString());
                 return result;
             }
         }
         return result;
     }
 
-    void orientation(const FunctionCallbackInfo<Value> &args)
-    {
-        Isolate *isolate = args.GetIsolate();
-        v8::Local<v8::Context> context = isolate->GetCurrentContext();
-        bool doubleType = false;
-        Local<String> errMsg = checkArguments(args, 2);
-        if (errMsg->Length() > 0)
-        {
-            isolate->ThrowException(Exception::TypeError(errMsg));
-            return;
-        }
-        if (args[1]->StrictEquals(String::NewFromUtf8(isolate, "double", v8::NewStringType::kNormal).ToLocalChecked()))
-        {
-            doubleType = true;
-        }
-        Paths polyshape = v8ArrayToPolygons(Local<Array>::Cast(args[0]), doubleType);
-        if (polyshape.size() <= 0)
-        {
-            return;
-        }
-        Local<Array> orientations = Array::New(isolate);
-        for (unsigned int i = 0; i < polyshape.size(); i++)
-        {
-            bool polyOrientation = Orientation(polyshape[i]);
-            orientations->Set(context, orientations->Length(), Boolean::New(isolate, polyOrientation)).FromJust();
-        }
-        args.GetReturnValue().Set(orientations);
-    }
-
-    void offset(const FunctionCallbackInfo<Value> &args)
-    {
-        Isolate *isolate = args.GetIsolate();
-        v8::Local<v8::Context> context = isolate->GetCurrentContext();
-        JoinType joinType = jtMiter;
-        EndType endType = etClosed;
-        double miterLimit = 30.0;
-        long delta;
-        bool doubleType = false;
-        Local<String> errMsg = checkArguments(args, 3);
-        if (errMsg->Length() > 0)
-        {
-            isolate->ThrowException(Exception::TypeError(errMsg));
-            return;
-        }
-        if (args[1]->StrictEquals(String::NewFromUtf8(isolate, "double", v8::NewStringType::kNormal).ToLocalChecked()))
-        {
-            doubleType = true;
-        }
-        if (doubleType)
-        {
-            delta = args[2]->NumberValue(context).FromMaybe(0) * doubleFactor;
-        }
-        else
-        {
-            delta = args[2]->NumberValue(context).FromMaybe(0);
-        }
-#ifdef DEBUG
-        if (debug > 0)
-            std::cout << "args[2]: delta: " << delta << std::endl;
-#endif
-        if (args.Length() > 3)
-        {
-            if (args[3]->StrictEquals(String::NewFromUtf8(isolate, "jtMiter", v8::NewStringType::kNormal).ToLocalChecked()))
-            {
-                joinType = jtMiter;
-            }
-            if (args[3]->StrictEquals(String::NewFromUtf8(isolate, "jtSquare", v8::NewStringType::kNormal).ToLocalChecked()))
-            {
-                joinType = jtSquare;
-            }
-            if (args[3]->StrictEquals(String::NewFromUtf8(isolate, "jtRound", v8::NewStringType::kNormal).ToLocalChecked()))
-            {
-                joinType = jtRound;
-            }
-#ifdef DEBUG
-            if (debug > 0)
-                std::cout << "args[3]: joinType: " << *v8::String::Utf8Value(isolate, args[3]) << std::endl;
-#endif
-        }
-        if (args.Length() > 4)
-        {
-            miterLimit = args[4]->NumberValue(context).FromMaybe(30.0);
-#ifdef DEBUG
-            if (debug > 0)
-                std::cout << "args[4]: miterLimit: " << miterLimit << std::endl;
-#endif
-        }
-        Paths polyshape = v8ArrayToPolygons(Local<Array>::Cast(args[0]), doubleType);
-        doFixOrientation(polyshape);
-        Paths polyshapeOut;
-#ifdef DEBUG
-        if (debug > 1)
-            std::cout << "before Offset: polyshape.size(): " << polyshape.size() << std::endl;
-#endif
-        OffsetPaths(polyshape, polyshapeOut, delta, joinType, endType, miterLimit);
-#ifdef DEBUG
-        if (debug > 1)
-            std::cout << "after  Offset: polyshapeOut.size(): " << polyshapeOut.size() << std::endl;
-#endif
-        if (polyshapeOut.size() > 0)
-        {
-            args.GetReturnValue().Set(polygonsToV8Array(isolate, polyshapeOut, doubleType));
-        }
-    }
-
     void minimum(const FunctionCallbackInfo<Value> &args)
     {
         Isolate *isolate = args.GetIsolate();
-        v8::Local<v8::Context> context = isolate->GetCurrentContext();
         const unsigned long ScaleMax = doubleFactor - 1;
         JoinType joinType = jtMiter;
         EndType endType = etClosed;
@@ -341,32 +231,32 @@ namespace demo
             isolate->ThrowException(Exception::TypeError(errMsg));
             return;
         }
-        if (args[1]->StrictEquals(String::NewFromUtf8(isolate, "double", v8::NewStringType::kNormal).ToLocalChecked()))
+        if (args[1]->Equals(String::NewFromUtf8(isolate, "double")))
         {
             doubleType = true;
         }
         if (args.Length() > 3)
         {
-            if (args[3]->StrictEquals(String::NewFromUtf8(isolate, "jtMiter", v8::NewStringType::kNormal).ToLocalChecked()))
+            if (args[3]->Equals(String::NewFromUtf8(isolate, "jtMiter")))
             {
                 joinType = jtMiter;
             }
-            if (args[3]->StrictEquals(String::NewFromUtf8(isolate, "jtSquare", v8::NewStringType::kNormal).ToLocalChecked()))
+            if (args[3]->Equals(String::NewFromUtf8(isolate, "jtSquare")))
             {
                 joinType = jtSquare;
             }
-            if (args[3]->StrictEquals(String::NewFromUtf8(isolate, "jtRound", v8::NewStringType::kNormal).ToLocalChecked()))
+            if (args[3]->Equals(String::NewFromUtf8(isolate, "jtRound")))
             {
                 joinType = jtRound;
             }
 #ifdef DEBUG
             if (debug > 0)
-                std::cout << "args[3]: joinType: " << *v8::String::Utf8Value(isolate, args[3]) << std::endl;
+                std::cout << "args[3]: joinType: " << *v8::String::Utf8Value(args[3]) << std::endl;
 #endif
         }
         if (args.Length() > 4)
         {
-            miterLimit = args[4]->NumberValue(context).FromMaybe(30.0);
+            miterLimit = args[4]->NumberValue();
 #ifdef DEBUG
             if (debug > 0)
                 std::cout << "args[4]: miterLimit: " << miterLimit << std::endl;
@@ -471,7 +361,6 @@ namespace demo
     void clip(const FunctionCallbackInfo<Value> &args)
     {
         Isolate *isolate = args.GetIsolate();
-        v8::Local<v8::Context> context = isolate->GetCurrentContext();
         bool doubleType = false;
         ClipType clipType = ctIntersection;
         Local<String> errMsg = checkArguments(args, 1);
@@ -480,27 +369,27 @@ namespace demo
             isolate->ThrowException(Exception::TypeError(errMsg));
             return;
         }
-        if (args.Length() > 2 && args[2]->StrictEquals(String::NewFromUtf8(isolate, "double", v8::NewStringType::kNormal).ToLocalChecked()))
+        if (args[2]->Equals(String::NewFromUtf8(isolate, "double")))
         {
             doubleType = true;
         }
         if (args.Length() > 3)
         {
-            if (args[3]->StrictEquals(String::NewFromUtf8(isolate, "ctUnion", v8::NewStringType::kNormal).ToLocalChecked()))
+            if (args[3]->Equals(String::NewFromUtf8(isolate, "ctUnion")))
             {
                 clipType = ctUnion;
             }
-            if (args[3]->StrictEquals(String::NewFromUtf8(isolate, "ctDifference", v8::NewStringType::kNormal).ToLocalChecked()))
+            if (args[3]->Equals(String::NewFromUtf8(isolate, "ctDifference")))
             {
                 clipType = ctDifference;
             }
-            if (args[3]->StrictEquals(String::NewFromUtf8(isolate, "ctXor", v8::NewStringType::kNormal).ToLocalChecked()))
+            if (args[3]->Equals(String::NewFromUtf8(isolate, "ctXor")))
             {
                 clipType = ctXor;
             }
 #ifdef DEBUG
             if (debug > 0)
-                std::cout << "args[3]: clipType: " << *v8::String::Utf8Value(isolate, args[3]) << std::endl;
+                std::cout << "args[3]: clipType: " << *v8::String::Utf8Value(args[3]) << std::endl;
 #endif
         }
         Clipper clipper;
@@ -532,7 +421,7 @@ namespace demo
                 singleSolution.push_back(clipperSolution[i]);
                 i++;
             } while (i < clipperSolution.size() && !Orientation(clipperSolution[i]));
-            solutions->Set(context, solutions->Length(), polygonsToV8Array(isolate, singleSolution, doubleType)).FromJust();
+            solutions->Set(solutions->Length(), polygonsToV8Array(isolate, singleSolution, doubleType));
             singleSolution.clear();
         }
 #ifdef DEBUG
@@ -548,7 +437,6 @@ namespace demo
     void clean(const FunctionCallbackInfo<Value> &args)
     {
         Isolate *isolate = args.GetIsolate();
-        v8::Local<v8::Context> context = isolate->GetCurrentContext();
         bool doubleType = false;
         double distance = 1.415;
         Local<String> errMsg = checkArguments(args, 2);
@@ -557,20 +445,20 @@ namespace demo
             isolate->ThrowException(Exception::TypeError(errMsg));
             return;
         }
-        if (args[1]->StrictEquals(String::NewFromUtf8(isolate, "double", v8::NewStringType::kNormal).ToLocalChecked()))
+        if (args[1]->Equals(String::NewFromUtf8(isolate, "double")))
         {
             doubleType = true;
         }
         if (args.Length() > 2)
         {
-            distance = args[2]->NumberValue(context).FromMaybe(1.415);
+            distance = args[2]->NumberValue();
 #ifdef DEBUG
             if (debug > 0)
-                std::cout << "args[2]: distance: " << *v8::String::Utf8Value(isolate, args[2]) << std::endl;
+                std::cout << "args[2]: distance: " << *v8::String::Utf8Value(args[2]) << std::endl;
 #endif
         }
         Paths polyshape = v8ArrayToPolygons(Local<Array>::Cast(args[0]), doubleType);
-        Paths polyshapeOut(polyshape.size());
+        Paths polyshapeOut;
 #ifdef DEBUG
         if (debug > 1)
             std::cout << "before CleanPolygons: polyshape.size(): " << polyshape.size() << std::endl;
@@ -590,13 +478,14 @@ namespace demo
     {
         Isolate *isolate = args.GetIsolate();
         bool doubleType = false;
+
         Local<String> errMsg = checkArguments(args, 2);
         if (errMsg->Length() > 0)
         {
             isolate->ThrowException(Exception::TypeError(errMsg));
             return;
         }
-        if (args[1]->StrictEquals(String::NewFromUtf8(isolate, "double", v8::NewStringType::kNormal).ToLocalChecked()))
+        if (args[1]->Equals(String::NewFromUtf8(isolate, "double")))
         {
             doubleType = true;
         }
@@ -604,7 +493,7 @@ namespace demo
         doFixOrientation(polyshape);
         if (polyshape.size() > 0)
         {
-            args.GetReturnValue().Set(polygonsToV8Array(Isolate::GetCurrent(), polyshape, doubleType));
+            args.GetReturnValue().Set(polygonsToV8Array(isolate, polyshape, doubleType));
         }
     }
 
@@ -612,13 +501,14 @@ namespace demo
     {
         Isolate *isolate = args.GetIsolate();
         bool doubleType = false;
+
         Local<String> errMsg = checkArguments(args, 2);
         if (errMsg->Length() > 0)
         {
             isolate->ThrowException(Exception::TypeError(errMsg));
             return;
         }
-        if (args[1]->StrictEquals(String::NewFromUtf8(isolate, "double", v8::NewStringType::kNormal).ToLocalChecked()))
+        if (args[1]->Equals(String::NewFromUtf8(isolate, "double")))
         {
             doubleType = true;
         }
@@ -626,10 +516,11 @@ namespace demo
         SimplifyPolygons(polyshape, polyshape, pftNonZero);
         if (polyshape.size() > 0)
         {
-            args.GetReturnValue().Set(polygonsToV8Array(Isolate::GetCurrent(), polyshape, doubleType));
+            args.GetReturnValue().Set(polygonsToV8Array(isolate, polyshape, doubleType));
         }
     }
 
+    // Module initialization
     void Init(Local<Object> exports)
     {
         NODE_SET_METHOD(exports, "setDebug", setDebug);
@@ -642,9 +533,6 @@ namespace demo
         NODE_SET_METHOD(exports, "simplify", simplify);
     }
 
-    // Register the module with node. Note that "modulename" must be the same as
-    // the basename of the resulting .node file. You can specify that name in
-    // binding.gyp ("target_name"). When you change it there, change it here too.
-    NODE_MODULE(clipper, Init);
+    NODE_MODULE(clipper, Init)
 
-}
+} // namespace demo
